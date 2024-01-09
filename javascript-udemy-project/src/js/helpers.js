@@ -1,0 +1,33 @@
+import { TIMEOUT_SEC } from './config';
+import { async } from 'regenerator-runtime';
+
+const timeout = (s) => {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Request took too long! Timeout after ${s} second`));
+    }, s * 1000);
+  });
+};
+
+const AJAX = async (url, uploadData = undefined) => {
+  try {
+    const fetchPro = uploadData
+      ? fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(uploadData),
+        })
+      : fetch(url);
+    const res = await Promise.race([fetchPro, timeout(TIMEOUT_SEC)]);
+    const data = await res.json();
+    if (data.status === 'fail') throw new Error(data.message);
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export default AJAX;
